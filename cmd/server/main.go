@@ -1,16 +1,16 @@
-package server
+package main
 
 import (
 	"github.com/emre-unlu/GinTest/internal/controllers"
-	"github.com/emre-unlu/GinTest/internal/models"
 	"github.com/emre-unlu/GinTest/internal/routes"
 	"github.com/emre-unlu/GinTest/internal/services"
+	"github.com/emre-unlu/GinTest/pkg/postgresql"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	models.ConnectDatabase()
-	userRepo := models.NewPGUserRepository(models.DB)
+	postgresql.ConnectDatabase()
+	userRepo := postgresql.NewPGUserRepository(postgresql.DB)
 	userService := services.NewUserService(userRepo)
 	controllers.InitializeUserController(userService)
 

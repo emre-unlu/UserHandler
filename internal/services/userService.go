@@ -27,7 +27,7 @@ func (s *UserService) GetUserById(id uint) (models.User, error) {
 	}
 	return user, nil
 }
-func (s *UserService) GetAllusers() ([]models.User, error) {
+func (s *UserService) GetAllUsers() ([]models.User, error) {
 	return s.userRepo.GetAllUsers()
 }
 func (s *UserService) DeleteUserById(id uint) (models.User, error) {

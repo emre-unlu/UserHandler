@@ -1,6 +1,6 @@
 module github.com/emre-unlu/GinTest
 
-go 1.18
+go 1.22.6
 
 require (
 	github.com/gin-gonic/gin v1.10.0
