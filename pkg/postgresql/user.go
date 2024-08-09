@@ -31,3 +31,7 @@ func (r *PGUserRepository) DeleteUserById(id uint) (models.User, error) {
 	result := r.DB.Delete(&models.User{}, id)
 	return models.User{}, result.Error
 }
+func (r *PGUserRepository) UpdateUser(user models.User) (models.User, error) {
+	result := r.DB.Save(&user)
+	return user, result.Error
+}
