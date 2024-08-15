@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/services"
 	"github.com/gin-gonic/gin"
@@ -11,11 +12,13 @@ import (
 )
 
 var validate = validator.New()
+var customValidator = internal.NewValidator()
 
 var userService *services.UserService
 
 func InitializeUserController(service *services.UserService) {
 	userService = service
+
 }
 
 func GetUsers(c *gin.Context) {
@@ -114,11 +117,20 @@ func UpdatePassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := validate.Struct(passwordUpdateDto); err != nil {
+
+	err = customValidator.Validator.Struct(passwordUpdateDto)
+	if err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		c.JSON(http.StatusBadRequest, gin.H{"error": validationErrors})
-		return
+		for _, validatonError := range validationErrors {
+			if validatonError.Tag() == "password-strength" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "The Password is not include one or more of the following characters : Uppercase , LowerCase , Special , Number "})
+				return
+			}
+			return
+
+		}
 	}
+
 	err = userService.UpdatePassword(uint(userId), passwordUpdateDto)
 	if err != nil {
 		if errors.Is(err, services.ErrIncorrectPassword) {
