@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"errors"
-	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/services"
+	"github.com/emre-unlu/GinTest/pkg/customValidator"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"net/http"
@@ -12,13 +12,12 @@ import (
 )
 
 var validate = validator.New()
-var customValidator = internal.NewValidator()
-
+var customValidate *customValidator.CustomValidator
 var userService *services.UserService
 
-func InitializeUserController(service *services.UserService) {
+func InitializeUserController(service *services.UserService, customValidator *customValidator.CustomValidator) {
 	userService = service
-
+	customValidate = customValidator // Assign custom validator to global variable
 }
 
 func GetUsers(c *gin.Context) {
@@ -118,17 +117,11 @@ func UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	err = customValidator.Validator.Struct(passwordUpdateDto)
-	if err != nil {
+	if err := customValidate.Validator.Struct(passwordUpdateDto); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		for _, validatonError := range validationErrors {
-			if validatonError.Tag() == "password-strength" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "The Password is not include one or more of the following characters : Uppercase , LowerCase , Special , Number "})
-				return
-			}
-			return
-
-		}
+		translatedErrors := validationErrors.Translate(customValidate.Translator)
+		c.JSON(http.StatusBadRequest, gin.H{"errors": translatedErrors})
+		return
 	}
 
 	err = userService.UpdatePassword(uint(userId), passwordUpdateDto)
