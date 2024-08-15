@@ -35,3 +35,7 @@ func (r *PGUserRepository) UpdateUser(user models.User) (models.User, error) {
 	result := r.DB.Save(&user)
 	return user, result.Error
 }
+
+func (r *PGUserRepository) UpdatePassword(id uint, newPassword string) error {
+	return r.DB.Model(&models.User{}).Where("id = ?", id).Update("password", newPassword).Error
+}

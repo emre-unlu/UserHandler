@@ -7,4 +7,5 @@ type UserRepository interface {
 	CreateUser(user User) (User, error)
 	DeleteUserById(id uint) (User, error)
 	UpdateUser(user User) (User, error)
+	UpdatePassword(id uint, newPassword string) error
 }

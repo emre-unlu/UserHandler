@@ -5,8 +5,15 @@ import (
 	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/models"
+	"github.com/emre-unlu/GinTest/pkg/utils"
 	"github.com/emre-unlu/go-passwordgen/passwordgen"
 	"time"
+)
+
+var (
+	ErrUserNotFound      = errors.New("user not found")
+	ErrIncorrectPassword = errors.New("incorrect password")
+	ErrHashingError      = errors.New("error hashing password")
 )
 
 type UserService struct {
@@ -22,9 +29,17 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 		return dtos.UserDto{}, "", errors.New("name is required")
 	}
 	generatedPassword, err := passwordgen.GeneratePassword(10)
+	if err != nil {
+		return dtos.UserDto{}, "", errors.New("Error generating password")
+	}
+
+	hashedPassword, err := utils.HashPassword(generatedPassword)
+	if err != nil {
+		return dtos.UserDto{}, "", errors.New("Error hashing password")
+	}
 
 	user, err := userDto.ToUser()
-	user.Password = generatedPassword
+	user.Password = hashedPassword
 
 	generatedUser, err := s.userRepo.CreateUser(user)
 	return dtos.ToUserDto(generatedUser), generatedPassword, err
@@ -33,7 +48,7 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)
 	if err != nil {
-		return dtos.UserDto{}, errors.New("user not found")
+		return dtos.UserDto{}, ErrUserNotFound
 	}
 	return dtos.ToUserDto(user), nil
 }
@@ -55,10 +70,10 @@ func (s *UserService) DeleteUserById(id uint) (dtos.UserDto, error) {
 	}
 	return dtos.ToUserDto(user), err
 }
-func (s *UserService) UpdateUser(id uint, updatedUserDto dtos.UserDto, newPassword string) (dtos.UserDto, error) {
+func (s *UserService) UpdateUser(id uint, updatedUserDto dtos.UserDto) (dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)
 	if err != nil {
-		return dtos.UserDto{}, errors.New("user not found")
+		return dtos.UserDto{}, ErrUserNotFound
 	}
 	if updatedUserDto.Name != "" {
 		user.Name = updatedUserDto.Name
@@ -79,14 +94,30 @@ func (s *UserService) UpdateUser(id uint, updatedUserDto dtos.UserDto, newPasswo
 		}
 		user.Birthdate = birthdate
 	}
-	if newPassword != "" {
-		user.Password = newPassword
-	}
 
 	updatedUser, err := s.userRepo.UpdateUser(user)
 	if err != nil {
-		return dtos.UserDto{}, errors.New("user not found")
+		return dtos.UserDto{}, ErrUserNotFound
 	}
 	return dtos.ToUserDto(updatedUser), nil
 
+}
+func (s *UserService) UpdatePassword(id uint, PasswordUpdateDto dtos.PasswordUpdateDto) error {
+	user, err := s.userRepo.GetUserById(id)
+	if err != nil {
+		return ErrUserNotFound
+	}
+	if !utils.VerifyPassword(PasswordUpdateDto.OldPassword, user.Password) {
+
+		return ErrIncorrectPassword
+	}
+
+	hashedPassword, err := utils.HashPassword(PasswordUpdateDto.NewPassword)
+	if err != nil {
+
+		return ErrHashingError
+	}
+	user.Password = hashedPassword
+	_, err = s.userRepo.UpdateUser(user)
+	return err
 }
