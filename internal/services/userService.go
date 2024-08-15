@@ -28,6 +28,12 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 	if userDto.Name == "" {
 		return dtos.UserDto{}, "", errors.New("name is required")
 	}
+	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
+
+	if isUserExist == true {
+		return dtos.UserDto{}, "", errors.New("Email already exists")
+	}
+
 	generatedPassword, err := passwordgen.GeneratePassword(10)
 	if err != nil {
 		return dtos.UserDto{}, "", errors.New("Error generating password")

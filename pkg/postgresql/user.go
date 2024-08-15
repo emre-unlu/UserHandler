@@ -39,3 +39,11 @@ func (r *PGUserRepository) UpdateUser(user models.User) (models.User, error) {
 func (r *PGUserRepository) UpdatePassword(id uint, newPassword string) error {
 	return r.DB.Model(&models.User{}).Where("id = ?", id).Update("password", newPassword).Error
 }
+func (r *PGUserRepository) CheckUserByEmail(email string) (bool, error) {
+	var count int64
+	err := r.DB.Model(&models.User{}).Where("email = ?", email).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

@@ -8,4 +8,5 @@ type UserRepository interface {
 	DeleteUserById(id uint) (User, error)
 	UpdateUser(user User) (User, error)
 	UpdatePassword(id uint, newPassword string) error
+	CheckUserByEmail(email string) (bool, error)
 }
