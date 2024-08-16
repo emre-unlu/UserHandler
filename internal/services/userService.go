@@ -31,7 +31,7 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
 
 	if isUserExist == true {
-		return dtos.UserDto{}, "", errors.New("Email already exists")
+		return dtos.UserDto{}, "", errors.New("There is a active or suspended user with this same email")
 	}
 
 	generatedPassword, err := passwordgen.GeneratePassword(10)
@@ -69,10 +69,24 @@ func (s *UserService) GetAllUsers() ([]dtos.UserDto, error) {
 	}
 	return userDTOs, nil
 }
-func (s *UserService) DeleteUserById(id uint) (dtos.UserDto, error) {
-	user, err := s.userRepo.DeleteUserById(id)
+func (s *UserService) DeactivateUserById(id uint) (dtos.UserDto, error) {
+	user, err := s.userRepo.DeactivateUserById(id)
 	if err != nil {
-		return dtos.UserDto{}, errors.New("unexpected error while deleting user")
+		return dtos.UserDto{}, err
+	}
+	return dtos.ToUserDto(user), err
+}
+func (s *UserService) SuspendUserById(id uint) (dtos.UserDto, error) {
+	user, err := s.userRepo.SuspendUserById(id)
+	if err != nil {
+		return dtos.UserDto{}, err
+	}
+	return dtos.ToUserDto(user), err
+}
+func (s *UserService) ActivateUserById(id uint) (dtos.UserDto, error) {
+	user, err := s.userRepo.ActivateUserById(id)
+	if err != nil {
+		return dtos.UserDto{}, err
 	}
 	return dtos.ToUserDto(user), err
 }

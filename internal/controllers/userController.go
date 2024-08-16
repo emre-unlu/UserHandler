@@ -5,8 +5,10 @@ import (
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/services"
 	"github.com/emre-unlu/GinTest/pkg/customValidator"
+	"github.com/emre-unlu/GinTest/pkg/postgresql"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 )
@@ -64,19 +66,72 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": createdUser, "password": generatedPassword})
 }
 
-func DeleteUserById(c *gin.Context) {
+func DeactivateUserById(c *gin.Context) {
 	id := c.Param("id")
 	userId, err := strconv.Atoi(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userDto, err := userService.DeleteUserById(uint(userId))
+
+	userDto, err := userService.DeactivateUserById(uint(userId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, postgresql.ErrUserAlreadyDisactive) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate user"})
+		}
 		return
 	}
-	c.JSON(http.StatusOK, userDto)
+	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully deactivated"})
+}
+func ActivateUserById(c *gin.Context) {
+	id := c.Param("id")
+	userId, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userDto, err := userService.ActivateUserById(uint(userId))
+	if err != nil {
+		if errors.Is(err, postgresql.ErrUserAlreadyActive) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		} else if errors.Is(err, postgresql.ErrUserDeleted) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate user"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully reactivated"})
+}
+func SuspendUserById(c *gin.Context) {
+	id := c.Param("id")
+	userId, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userDto, err := userService.SuspendUserById(uint(userId))
+	if err != nil {
+		if errors.Is(err, postgresql.ErrUserAlreadySuspended) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		} else if errors.Is(err, postgresql.ErrUserDeleted) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate user"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully suspended"})
 }
 
 func UpdateUser(c *gin.Context) {

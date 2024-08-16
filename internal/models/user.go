@@ -10,4 +10,5 @@ type User struct {
 	Phone     string    `json:"phone"`
 	Birthdate time.Time `json:"birthdate"`
 	Password  string    `json:"password"`
+	Status    Status    `gorm:"default:'active'" json:"status"`
 }

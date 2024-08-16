@@ -15,6 +15,7 @@ func ToUserDto(user models.User) UserDto {
 		Email:     user.Email,
 		Phone:     user.Phone,
 		Birthdate: user.Birthdate.Format(BirthdateFormat),
+		Status:    user.Status,
 	}
 }
 
@@ -30,5 +31,6 @@ func (u *UserDto) ToUser() (models.User, error) {
 		Email:     u.Email,
 		Phone:     u.Phone,
 		Birthdate: birthdate,
+		Status:    u.Status,
 	}, err
 }
