@@ -64,7 +64,7 @@ func CreateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user": createdUser, "password": generatedPassword})
+	c.JSON(http.StatusOK, gin.H{"id": createdUser.ID, "password": generatedPassword})
 }
 
 func DeactivateUserById(c *gin.Context) {

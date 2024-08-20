@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/emre-unlu/GinTest/internal/controllers"
 	"github.com/emre-unlu/GinTest/internal/routes"
+	"github.com/emre-unlu/GinTest/internal/seeder"
 	"github.com/emre-unlu/GinTest/internal/services"
 	"github.com/emre-unlu/GinTest/pkg/customValidator"
 	"github.com/emre-unlu/GinTest/pkg/postgresql"
@@ -11,6 +12,7 @@ import (
 
 func main() {
 	postgresql.ConnectDatabase()
+	seeder.SeedUser(postgresql.DB) //seed user if no user exists
 	userRepo := postgresql.NewPGUserRepository(postgresql.DB)
 	userService := services.NewUserService(userRepo)
 	customValidator := customValidator.NewValidator(userRepo)
