@@ -3,7 +3,8 @@ package services
 import (
 	"errors"
 	"github.com/emre-unlu/GinTest/internal/models"
-	"github.com/emre-unlu/GinTest/pkg/utils"
+	"github.com/emre-unlu/GinTest/internal/utils"
+	"github.com/emre-unlu/GinTest/pkg/jwt"
 )
 
 var (
@@ -28,7 +29,7 @@ func (s *AuthService) Login(email, password string) (accessToken, refreshToken s
 		return "", "", ErrInvalidCredentials
 	}
 
-	accessToken, refreshToken, err = utils.GenerateJWT(email)
+	accessToken, refreshToken, err = jwt.GenerateJWT(email)
 	if err != nil {
 		return "", "", err
 	}

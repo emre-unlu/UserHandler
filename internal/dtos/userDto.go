@@ -25,3 +25,6 @@ type RefreshTokenDTO struct {
 }
 type UserTokenDTO struct {
 }
+type ErrorMessageDto struct {
+	Message string `json:"message"`
+}

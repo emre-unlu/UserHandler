@@ -1,4 +1,4 @@
-package utils
+package jwt
 
 import (
 	"github.com/emre-unlu/GinTest/internal/config"
@@ -50,6 +50,9 @@ func ValidateJWT(accessToken string) (claims *Claims, err error) {
 		return config.JWTSecretKey, nil
 	})
 	if err != nil {
+		return nil, err
+	}
+	if token == nil {
 		return nil, err
 	}
 

@@ -5,7 +5,7 @@ import (
 	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/models"
-	"github.com/emre-unlu/GinTest/pkg/utils"
+	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/go-passwordgen/passwordgen"
 	"time"
 )

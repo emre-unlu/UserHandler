@@ -3,7 +3,7 @@ package controllers
 import (
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/services"
-	"github.com/emre-unlu/GinTest/pkg/utils"
+	"github.com/emre-unlu/GinTest/pkg/jwt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -45,13 +45,13 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	claims, err := utils.ValidateJWT(refreshTokenDTO.RefreshToken)
+	claims, err := jwt.ValidateJWT(refreshTokenDTO.RefreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
 		return
 	}
 
-	newAccessToken, _, err := utils.GenerateJWT(claims.Email)
+	newAccessToken, _, err := jwt.GenerateJWT(claims.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to refresh token. Please try again later."})
 		return
