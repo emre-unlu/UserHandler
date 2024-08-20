@@ -52,16 +52,8 @@ func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
 	}
 	return dtos.ToUserDto(user), nil
 }
-func (s *UserService) GetAllUsers() ([]dtos.UserDto, error) {
-	users, err := s.userRepo.GetAllUsers()
-	if err != nil {
-		return nil, err
-	}
-	var userDTOs []dtos.UserDto
-	for _, user := range users {
-		userDTOs = append(userDTOs, dtos.ToUserDto(user))
-	}
-	return userDTOs, nil
+func (s *UserService) GetUsersWithPagination(page int, limit int) ([]models.User, int64, error) {
+	return s.userRepo.GetUsersWithPagination(page, limit)
 }
 func (s *UserService) DeactivateUserById(id uint) (dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)

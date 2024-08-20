@@ -19,6 +19,7 @@ type PasswordUpdateDto struct {
 type LoginDto struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,password"`
+	Id       uint   `json:"id" validate:"required,number"`
 }
 type RefreshTokenDTO struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`

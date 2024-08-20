@@ -1,7 +1,7 @@
 package models
 
 type UserRepository interface {
-	GetAllUsers() ([]User, error)
+	GetUsersWithPagination(page int, limit int) ([]User, int64, error)
 	GetUserById(id uint) (User, error)
 	CreateUser(user User) (User, error)
 	DeactivateUserById(user User) (User, error)

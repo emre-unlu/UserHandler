@@ -19,11 +19,20 @@ func NewPGUserRepository(db *gorm.DB) *PGUserRepository {
 	return &PGUserRepository{DB: db}
 }
 
-func (r *PGUserRepository) GetAllUsers() ([]models.User, error) {
+func (r *PGUserRepository) GetUsersWithPagination(page int, limit int) ([]models.User, int64, error) {
 	var users []models.User
-	result := r.DB.Find(&users)
-	return users, result.Error
+	var total int64
+	offset := (page - 1) * limit
+	if err := r.DB.Model(&models.User{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := r.DB.Limit(limit).Offset(offset).Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
 }
+
 func (r *PGUserRepository) GetUserById(id uint) (models.User, error) {
 	var user models.User
 	result := r.DB.First(&user, id)

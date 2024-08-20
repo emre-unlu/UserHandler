@@ -23,30 +23,60 @@ func InitializeUserController(service *services.UserService, customValidator *cu
 	customValidate = customValidator // Assign custom validator to global variable
 }
 
-func GetUsers(c *gin.Context) {
-	users, err := userService.GetAllUsers()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func GetUsersWithPagination(c *gin.Context) {
+	pageParam := c.DefaultQuery("page", "1")
+	limitParam := c.DefaultQuery("limit", "10")
+
+	page, err := strconv.Atoi(pageParam)
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
 		return
 	}
-	c.JSON(http.StatusOK, users)
+
+	limit, err := strconv.Atoi(limitParam)
+	if err != nil || limit < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit number"})
+		return
+	}
+
+	users, total, err := userService.GetUsersWithPagination(page, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total": total,
+		"page":  page,
+		"limit": limit,
+		"users": users,
+	})
 }
 func GetUserById(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+	id, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	user, err := userService.GetUserById(uint(userId))
+
+	userId, ok := id.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "failed to parse user ID"})
+		return
+	}
+
+	user, err := userService.GetUserById(userId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, user)
 }
 
 func CreateUser(c *gin.Context) {
+
 	var userDto dtos.UserDto
 	if err := c.ShouldBindJSON(&userDto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

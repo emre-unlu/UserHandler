@@ -21,7 +21,8 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := authService.Login(loginDTO.Email, loginDTO.Password)
+	dtoToGenerate, err := authService.Login(loginDTO.Email, loginDTO.Password)
+	accessToken, refreshToken, err := jwt.GenerateJWT(dtoToGenerate.Email, dtoToGenerate.Id)
 	if err != nil {
 		if err == services.ErrInvalidCredentials {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
@@ -51,7 +52,7 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	newAccessToken, _, err := jwt.GenerateJWT(claims.Email)
+	newAccessToken, _, err := jwt.GenerateJWT(claims.Email, claims.Id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to refresh token. Please try again later."})
 		return

@@ -8,14 +8,16 @@ import (
 
 type Claims struct {
 	Email string `json:"email"`
+	Id    uint   `json:"id"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(email string) (accessToken string, refreshToken string, err error) {
+func GenerateJWT(email string, id uint) (accessToken string, refreshToken string, err error) {
 
 	expirationTimeAccess := time.Now().Add(config.AccessTokenExpiration)
 	claimsAccess := &Claims{
 		Email: email,
+		Id:    id,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTimeAccess),
 			Issuer:    "emre",
@@ -30,6 +32,7 @@ func GenerateJWT(email string) (accessToken string, refreshToken string, err err
 	expirationTimeRefresh := time.Now().Add(config.RefreshTokenExpiration)
 	claimsRefresh := &Claims{
 		Email: email,
+		Id:    id,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTimeRefresh),
 			Issuer:    "emre",

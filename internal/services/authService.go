@@ -2,9 +2,9 @@ package services
 
 import (
 	"errors"
+	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/models"
 	"github.com/emre-unlu/GinTest/internal/utils"
-	"github.com/emre-unlu/GinTest/pkg/jwt"
 )
 
 var (
@@ -19,20 +19,21 @@ func NewAuthService(userRepo models.UserRepository) *AuthService {
 	return &AuthService{userRepo: userRepo}
 }
 
-func (s *AuthService) Login(email, password string) (accessToken, refreshToken string, err error) {
+func (s *AuthService) Login(email string, password string) (loginDto dtos.LoginDto, err error) {
 	user, err := s.userRepo.CheckUserByEmail(email)
 	if err != nil {
-		return "", "", ErrInvalidCredentials
+		return dtos.LoginDto{}, ErrInvalidCredentials
 	}
 
 	if !utils.VerifyPassword(password, user.Password) {
-		return "", "", ErrInvalidCredentials
+		return dtos.LoginDto{}, ErrInvalidCredentials
 	}
 
-	accessToken, refreshToken, err = jwt.GenerateJWT(email)
-	if err != nil {
-		return "", "", err
+	loginDto = dtos.LoginDto{
+		Email:    user.Email,
+		Password: user.Password,
+		Id:       user.ID,
 	}
 
-	return accessToken, refreshToken, nil
+	return loginDto, nil
 }
