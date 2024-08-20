@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/services"
 	"github.com/emre-unlu/GinTest/pkg/customValidator"
@@ -181,7 +182,7 @@ func UpdatePassword(c *gin.Context) {
 
 	err = userService.UpdatePassword(uint(userId), passwordUpdateDto)
 	if err != nil {
-		if errors.Is(err, services.ErrIncorrectPassword) {
+		if errors.Is(err, internal.ErrIncorrectPassword) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "The old password is incorrect"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update password. Please try again later."})

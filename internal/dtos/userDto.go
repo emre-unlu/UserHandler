@@ -15,3 +15,13 @@ type PasswordUpdateDto struct {
 	OldPassword string `json:"old_password" validate:"required"`
 	NewPassword string `json:"new_password" validate:"required,password-strength"`
 }
+
+type LoginDto struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,password"`
+}
+type RefreshTokenDTO struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+type UserTokenDTO struct {
+}

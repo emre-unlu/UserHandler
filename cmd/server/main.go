@@ -15,6 +15,8 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	customValidator := customValidator.NewValidator(userRepo)
 	controllers.InitializeUserController(userService, customValidator)
+	authService := services.NewAuthService(userRepo)
+	controllers.InitilizeAuthController(authService)
 
 	r := gin.Default()
 	routes.RegisterRoutes(r)

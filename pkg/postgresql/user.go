@@ -34,21 +34,7 @@ func (r *PGUserRepository) CreateUser(user models.User) (models.User, error) {
 	return user, result.Error
 }
 
-func (r *PGUserRepository) SuspendUserById(id uint) (models.User, error) {
-	var user models.User
-	userToSuspend := r.DB.First(&user, id)
-	if userToSuspend.Error != nil {
-		return user, userToSuspend.Error
-	}
-
-	if user.Status == models.StatusSuspended {
-		return user, ErrUserAlreadySuspended
-	}
-	if user.Status == models.StatusInactive {
-		return user, ErrUserDeleted
-	}
-
-	user.Status = models.StatusSuspended
+func (r *PGUserRepository) SuspendUserById(user models.User) (models.User, error) {
 	result := r.DB.Save(&user)
 	if result.Error != nil {
 		return user, result.Error
@@ -56,18 +42,7 @@ func (r *PGUserRepository) SuspendUserById(id uint) (models.User, error) {
 	return user, result.Error
 }
 
-func (r *PGUserRepository) DeactivateUserById(id uint) (models.User, error) {
-	var user models.User
-	userToDelete := r.DB.First(&user, id)
-	if userToDelete.Error != nil {
-		return user, userToDelete.Error
-	}
-
-	if user.Status == models.StatusInactive {
-		return user, ErrUserAlreadyDisactive
-	}
-
-	user.Status = models.StatusInactive
+func (r *PGUserRepository) DeactivateUserById(user models.User) (models.User, error) {
 	result := r.DB.Save(&user)
 	if result.Error != nil {
 		return user, result.Error
@@ -75,21 +50,7 @@ func (r *PGUserRepository) DeactivateUserById(id uint) (models.User, error) {
 	return user, result.Error
 }
 
-func (r *PGUserRepository) ActivateUserById(id uint) (models.User, error) {
-	var user models.User
-	userToActivate := r.DB.First(&user, id)
-	if userToActivate.Error != nil {
-		return user, userToActivate.Error
-	}
-
-	if user.Status == models.StatusActive {
-		return user, ErrUserAlreadyActive
-	}
-	if user.Status == models.StatusInactive {
-		return user, ErrUserDeleted
-	}
-
-	user.Status = models.StatusActive
+func (r *PGUserRepository) ActivateUserById(user models.User) (models.User, error) {
 	result := r.DB.Save(&user)
 	if result.Error != nil {
 		return user, result.Error
@@ -104,13 +65,15 @@ func (r *PGUserRepository) UpdateUser(user models.User) (models.User, error) {
 func (r *PGUserRepository) UpdatePassword(id uint, newPassword string) error {
 	return r.DB.Model(&models.User{}).Where("id = ?", id).Update("password", newPassword).Error
 }
-func (r *PGUserRepository) CheckUserByEmail(email string) (bool, error) {
-	var count int64
-	err := r.DB.Model(&models.User{}).
-		Where("email = ? AND status IN (?, ?)", email, models.StatusActive, models.StatusSuspended).
-		Count(&count).Error
+func (r *PGUserRepository) CheckUserByEmail(email string) (models.User, error) {
+	var user models.User
+	err := r.DB.Where("email = ? AND status IN (?, ?)", email, models.StatusActive, models.StatusSuspended).
+		First(&user).Error
 	if err != nil {
-		return false, err
+		if err == gorm.ErrRecordNotFound {
+			return models.User{}, nil // No user found
+		}
+		return models.User{}, err // Some other error occurred
 	}
-	return count > 0, nil
+	return user, nil
 }

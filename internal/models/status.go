@@ -1,9 +1,9 @@
 package models
 
-type Status string
+type Status int
 
 const (
-	StatusActive    Status = "active"
-	StatusInactive  Status = "inactive"
-	StatusSuspended Status = "suspended"
+	StatusActive    Status = 1
+	StatusInactive  Status = 9
+	StatusSuspended Status = 2
 )

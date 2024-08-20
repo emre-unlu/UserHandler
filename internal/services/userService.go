@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrIncorrectPassword = errors.New("incorrect password")
-	ErrHashingError      = errors.New("error hashing password")
-)
-
 type UserService struct {
 	userRepo models.UserRepository
 }
@@ -30,7 +24,7 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 	}
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
 
-	if isUserExist == true {
+	if isUserExist != (models.User{}) {
 		return dtos.UserDto{}, "", errors.New("There is a active or suspended user with this same email")
 	}
 
@@ -54,7 +48,7 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)
 	if err != nil {
-		return dtos.UserDto{}, ErrUserNotFound
+		return dtos.UserDto{}, internal.ErrUserNotFound
 	}
 	return dtos.ToUserDto(user), nil
 }
@@ -70,30 +64,66 @@ func (s *UserService) GetAllUsers() ([]dtos.UserDto, error) {
 	return userDTOs, nil
 }
 func (s *UserService) DeactivateUserById(id uint) (dtos.UserDto, error) {
-	user, err := s.userRepo.DeactivateUserById(id)
+	user, err := s.userRepo.GetUserById(id)
+	if err != nil {
+		return dtos.UserDto{}, internal.ErrUserNotFound
+	}
+	if user.Status == models.StatusInactive {
+		return dtos.UserDto{}, internal.ErrUserAlreadyDisactive
+	}
+
+	user.Status = models.StatusInactive
+	updatedUser, err := s.userRepo.DeactivateUserById(user)
+
 	if err != nil {
 		return dtos.UserDto{}, err
 	}
-	return dtos.ToUserDto(user), err
+	return dtos.ToUserDto(updatedUser), err
 }
 func (s *UserService) SuspendUserById(id uint) (dtos.UserDto, error) {
-	user, err := s.userRepo.SuspendUserById(id)
+	user, err := s.userRepo.GetUserById(id)
+	if err != nil {
+		return dtos.UserDto{}, internal.ErrUserNotFound
+	}
+	if user.Status == models.StatusSuspended {
+		return dtos.UserDto{}, internal.ErrUserAlreadySuspended
+	}
+	if user.Status == models.StatusInactive {
+		return dtos.UserDto{}, internal.ErrUserDeleted
+	}
+
+	user.Status = models.StatusSuspended
+	updatedUser, err := s.userRepo.SuspendUserById(user)
+
 	if err != nil {
 		return dtos.UserDto{}, err
 	}
-	return dtos.ToUserDto(user), err
+	return dtos.ToUserDto(updatedUser), err
 }
 func (s *UserService) ActivateUserById(id uint) (dtos.UserDto, error) {
-	user, err := s.userRepo.ActivateUserById(id)
+	user, err := s.userRepo.GetUserById(id)
+	if err != nil {
+		return dtos.UserDto{}, internal.ErrUserNotFound
+	}
+	if user.Status == models.StatusActive {
+		return dtos.UserDto{}, internal.ErrUserAlreadyActive
+	}
+	if user.Status == models.StatusInactive {
+		return dtos.UserDto{}, internal.ErrUserDeleted
+	}
+
+	user.Status = models.StatusActive
+	updatedUser, err := s.userRepo.ActivateUserById(user)
+
 	if err != nil {
 		return dtos.UserDto{}, err
 	}
-	return dtos.ToUserDto(user), err
+	return dtos.ToUserDto(updatedUser), err
 }
 func (s *UserService) UpdateUser(id uint, updatedUserDto dtos.UserDto) (dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)
 	if err != nil {
-		return dtos.UserDto{}, ErrUserNotFound
+		return dtos.UserDto{}, internal.ErrUserNotFound
 	}
 	if updatedUserDto.Name != "" {
 		user.Name = updatedUserDto.Name
@@ -117,7 +147,7 @@ func (s *UserService) UpdateUser(id uint, updatedUserDto dtos.UserDto) (dtos.Use
 
 	updatedUser, err := s.userRepo.UpdateUser(user)
 	if err != nil {
-		return dtos.UserDto{}, ErrUserNotFound
+		return dtos.UserDto{}, internal.ErrUserNotFound
 	}
 	return dtos.ToUserDto(updatedUser), nil
 
@@ -125,17 +155,17 @@ func (s *UserService) UpdateUser(id uint, updatedUserDto dtos.UserDto) (dtos.Use
 func (s *UserService) UpdatePassword(id uint, PasswordUpdateDto dtos.PasswordUpdateDto) error {
 	user, err := s.userRepo.GetUserById(id)
 	if err != nil {
-		return ErrUserNotFound
+		return internal.ErrUserNotFound
 	}
 	if !utils.VerifyPassword(PasswordUpdateDto.OldPassword, user.Password) {
 
-		return ErrIncorrectPassword
+		return internal.ErrIncorrectPassword
 	}
 
 	hashedPassword, err := utils.HashPassword(PasswordUpdateDto.NewPassword)
 	if err != nil {
 
-		return ErrHashingError
+		return internal.ErrHashingError
 	}
 	user.Password = hashedPassword
 	_, err = s.userRepo.UpdateUser(user)
