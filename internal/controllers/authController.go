@@ -22,6 +22,10 @@ func Login(c *gin.Context) {
 	}
 
 	dtoToGenerate, err := authService.Login(loginDTO.Email, loginDTO.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	accessToken, refreshToken, err := jwt.GenerateJWT(dtoToGenerate.Email, dtoToGenerate.Id)
 	if err != nil {
 		if err == services.ErrInvalidCredentials {
