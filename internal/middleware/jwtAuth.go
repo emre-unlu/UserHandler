@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/GinTest/pkg/jwt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -11,21 +12,21 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
+			utils.RespondWithError(c, http.StatusUnauthorized, "Unauthorized")
 			c.Abort()
 			return
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Token ")
 		if tokenString == authHeader {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong expressed token"})
+			utils.RespondWithError(c, http.StatusUnauthorized, "Unable to find token")
 			c.Abort()
 			return
 		}
 
 		claims, err := jwt.ValidateJWT(tokenString)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 			c.Abort()
 			return
 		}

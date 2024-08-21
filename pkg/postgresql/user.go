@@ -80,9 +80,10 @@ func (r *PGUserRepository) CheckUserByEmail(email string) (models.User, error) {
 		First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return models.User{}, nil // No user found
+			return models.User{}, gorm.ErrRecordNotFound
+			return models.User{}, err
 		}
-		return models.User{}, err // Some other error occurred
+
 	}
 	return user, nil
 }

@@ -23,6 +23,9 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 		return dtos.UserDto{}, "", errors.New("name is required")
 	}
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
+	if err != nil {
+		return dtos.UserDto{}, "", err
+	}
 
 	if isUserExist != (models.User{}) {
 		return dtos.UserDto{}, "", errors.New("There is a active or suspended user with this same email")
