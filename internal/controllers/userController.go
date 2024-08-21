@@ -5,6 +5,7 @@ import (
 	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/services"
+	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/GinTest/pkg/customValidator"
 	"github.com/emre-unlu/GinTest/pkg/postgresql"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ var userService *services.UserService
 
 func InitializeUserController(service *services.UserService, customValidator *customValidator.CustomValidator) {
 	userService = service
-	customValidate = customValidator // Assign custom validator to global variable
+	customValidate = customValidator
 }
 
 func GetUsersWithPagination(c *gin.Context) {
@@ -29,19 +30,19 @@ func GetUsersWithPagination(c *gin.Context) {
 
 	page, err := strconv.Atoi(pageParam)
 	if err != nil || page < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid page parameter")
 		return
 	}
 
 	limit, err := strconv.Atoi(limitParam)
 	if err != nil || limit < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit number"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid limit parameter")
 		return
 	}
 
 	users, total, err := userService.GetUsersWithPagination(page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users"})
+		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -56,19 +57,19 @@ func GetUserById(c *gin.Context) {
 
 	id, exists := c.Get("id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
 		return
 	}
 
 	userId, ok := id.(uint)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "failed to parse user ID"})
+		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
 		return
 	}
 
 	user, err := userService.GetUserById(userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -79,7 +80,7 @@ func CreateUser(c *gin.Context) {
 
 	var userDto dtos.UserDto
 	if err := c.ShouldBindJSON(&userDto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -91,7 +92,7 @@ func CreateUser(c *gin.Context) {
 
 	createdUser, generatedPassword, err := userService.CreateUser(userDto)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": createdUser.ID, "password": generatedPassword})
@@ -101,18 +102,18 @@ func DeactivateUserById(c *gin.Context) {
 	id := c.Param("id")
 	userId, err := strconv.Atoi(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	userDto, err := userService.DeactivateUserById(uint(userId))
 	if err != nil {
 		if errors.Is(err, postgresql.ErrUserAlreadyDisactive) {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			utils.RespondWithError(c, http.StatusConflict, err.Error())
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate user"})
+			utils.RespondWithError(c, http.StatusInternalServerError, "Failed to deactivate user")
 		}
 		return
 	}
@@ -122,20 +123,20 @@ func ActivateUserById(c *gin.Context) {
 	id := c.Param("id")
 	userId, err := strconv.Atoi(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	userDto, err := userService.ActivateUserById(uint(userId))
 	if err != nil {
 		if errors.Is(err, postgresql.ErrUserAlreadyActive) {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		} else if errors.Is(err, postgresql.ErrUserDeleted) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			utils.RespondWithError(c, http.StatusNotFound, "User not found")
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate user"})
+			utils.RespondWithError(c, http.StatusInternalServerError, "User activation failed")
 		}
 		return
 	}
@@ -145,20 +146,20 @@ func SuspendUserById(c *gin.Context) {
 	id := c.Param("id")
 	userId, err := strconv.Atoi(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	userDto, err := userService.SuspendUserById(uint(userId))
 	if err != nil {
 		if errors.Is(err, postgresql.ErrUserAlreadySuspended) {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			utils.RespondWithError(c, http.StatusConflict, err.Error())
 		} else if errors.Is(err, postgresql.ErrUserDeleted) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			utils.RespondWithError(c, http.StatusNotFound, err.Error())
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deactivate user"})
+			utils.RespondWithError(c, http.StatusInternalServerError, "Failed to suspend user")
 		}
 		return
 	}
@@ -169,23 +170,25 @@ func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	userId, err := strconv.Atoi(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	var userDto dtos.UserDto
 	if err := c.ShouldBindJSON(&userDto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	if err := validate.Struct(userDto); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		c.JSON(http.StatusBadRequest, gin.H{"error": validationErrors})
+		utils.RespondWithError(c, http.StatusBadRequest, validationErrors.Error())
 		return
 	}
 
 	updatedUserDto, err := userService.UpdateUser(uint(userId), userDto)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 	c.JSON(http.StatusOK, updatedUserDto)
 
@@ -194,12 +197,12 @@ func UpdatePassword(c *gin.Context) {
 	id := c.Param("id")
 	userId, err := strconv.Atoi(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	var passwordUpdateDto dtos.PasswordUpdateDto
 	if err := c.ShouldBindJSON(&passwordUpdateDto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -213,9 +216,9 @@ func UpdatePassword(c *gin.Context) {
 	err = userService.UpdatePassword(uint(userId), passwordUpdateDto)
 	if err != nil {
 		if errors.Is(err, internal.ErrIncorrectPassword) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "The old password is incorrect"})
+			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update password. Please try again later."})
+			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
 		}
 		return
 	}
