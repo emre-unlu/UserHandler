@@ -78,11 +78,9 @@ func (r *PGUserRepository) CheckUserByEmail(email string) (models.User, error) {
 	var user models.User
 	err := r.DB.Where("email = ? AND status IN (?, ?)", email, models.StatusActive, models.StatusSuspended).
 		First(&user).Error
+
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return models.User{}, gorm.ErrRecordNotFound
-			return models.User{}, err
-		}
+		return models.User{}, err
 
 	}
 	return user, nil

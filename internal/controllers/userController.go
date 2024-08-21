@@ -99,14 +99,20 @@ func CreateUser(c *gin.Context) {
 }
 
 func DeactivateUserById(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
+
+	id, exists := c.Get("id")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
 		return
 	}
 
-	userDto, err := userService.DeactivateUserById(uint(userId))
+	userId, ok := id.(uint)
+	if !ok {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
+		return
+	}
+
+	userDto, err := userService.DeactivateUserById(userId)
 	if err != nil {
 		if errors.Is(err, postgresql.ErrUserAlreadyDisactive) {
 			utils.RespondWithError(c, http.StatusConflict, err.Error())
@@ -120,14 +126,18 @@ func DeactivateUserById(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully deactivated"})
 }
 func ActivateUserById(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
+	id, exists := c.Get("id")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
+		return
+	}
+	userId, ok := id.(uint)
+	if !ok {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
 		return
 	}
 
-	userDto, err := userService.ActivateUserById(uint(userId))
+	userDto, err := userService.ActivateUserById(userId)
 	if err != nil {
 		if errors.Is(err, postgresql.ErrUserAlreadyActive) {
 			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
@@ -143,14 +153,18 @@ func ActivateUserById(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully reactivated"})
 }
 func SuspendUserById(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
+	id, exists := c.Get("id")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
+		return
+	}
+	userId, ok := id.(uint)
+	if !ok {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
 		return
 	}
 
-	userDto, err := userService.SuspendUserById(uint(userId))
+	userDto, err := userService.SuspendUserById(userId)
 	if err != nil {
 		if errors.Is(err, postgresql.ErrUserAlreadySuspended) {
 			utils.RespondWithError(c, http.StatusConflict, err.Error())
@@ -167,10 +181,14 @@ func SuspendUserById(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
+	id, exists := c.Get("id")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
+		return
+	}
+	userId, ok := id.(uint)
+	if !ok {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
 		return
 	}
 	var userDto dtos.UserDto
@@ -185,7 +203,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	updatedUserDto, err := userService.UpdateUser(uint(userId), userDto)
+	updatedUserDto, err := userService.UpdateUser(userId, userDto)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -194,10 +212,14 @@ func UpdateUser(c *gin.Context) {
 
 }
 func UpdatePassword(c *gin.Context) {
-	id := c.Param("id")
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
+	id, exists := c.Get("id")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
+		return
+	}
+	userId, ok := id.(uint)
+	if !ok {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
 		return
 	}
 	var passwordUpdateDto dtos.PasswordUpdateDto
@@ -213,7 +235,7 @@ func UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	err = userService.UpdatePassword(uint(userId), passwordUpdateDto)
+	err := userService.UpdatePassword(userId, passwordUpdateDto)
 	if err != nil {
 		if errors.Is(err, internal.ErrIncorrectPassword) {
 			utils.RespondWithError(c, http.StatusBadRequest, err.Error())

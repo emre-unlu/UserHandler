@@ -16,10 +16,10 @@ func RegisterRoutes(router *gin.Engine) {
 	{
 		authorized.GET("/users", controllers.GetUsersWithPagination)
 		authorized.GET("/users/getUser", controllers.GetUserById)
-		authorized.PUT("/users/:id/deactivate", controllers.DeactivateUserById)
-		authorized.PUT("/users/:id/suspend", controllers.SuspendUserById)
-		authorized.PUT("/users/:id/activate", controllers.ActivateUserById)
-		authorized.PUT("/users/:id", controllers.UpdateUser)
-		authorized.PUT("/users/:id/password", controllers.UpdatePassword)
+		authorized.PUT("/users/deactivate", controllers.DeactivateUserById)
+		authorized.PUT("/users/suspend", controllers.SuspendUserById)
+		authorized.PUT("/users/activate", controllers.ActivateUserById)
+		authorized.PUT("/users/update", controllers.UpdateUser)
+		authorized.PUT("/users/password", controllers.UpdatePassword)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/emre-unlu/GinTest/internal/models"
 	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/go-passwordgen/passwordgen"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -23,7 +24,7 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 		return dtos.UserDto{}, "", errors.New("name is required")
 	}
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return dtos.UserDto{}, "", err
 	}
 
