@@ -1,7 +1,7 @@
 package models
 
 type UserRepository interface {
-	GetUsersWithPagination(page int, limit int) ([]User, int64, error)
+	GetUserList(page int, limit int) ([]User, int64, error)
 	GetUserById(id uint) (User, error)
 	CreateUser(user User) (User, error)
 	DeactivateUserById(user User) (User, error)
@@ -9,5 +9,5 @@ type UserRepository interface {
 	SuspendUserById(user User) (User, error)
 	UpdateUser(user User) (User, error)
 	UpdatePassword(id uint, newPassword string) error
-	CheckUserByEmail(email string) (User, error)
+	CheckUserByEmail(email string) (*User, error)
 }

@@ -31,11 +31,7 @@ func Login(c *gin.Context) {
 	}
 	accessToken, refreshToken, err := jwt.GenerateJWT(dtoToGenerate.Email, dtoToGenerate.Id)
 	if err != nil {
-		if err == services.ErrInvalidCredentials {
-			utils.RespondWithError(c, http.StatusUnauthorized, err.Error())
-		} else {
-			utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
-		}
+		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

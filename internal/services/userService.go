@@ -7,7 +7,7 @@ import (
 	"github.com/emre-unlu/GinTest/internal/models"
 	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/go-passwordgen/passwordgen"
-	"gorm.io/gorm"
+	"strconv"
 	"time"
 )
 
@@ -24,11 +24,11 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, er
 		return dtos.UserDto{}, "", errors.New("name is required")
 	}
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil {
 		return dtos.UserDto{}, "", err
 	}
 
-	if isUserExist != (models.User{}) {
+	if isUserExist != nil {
 		return dtos.UserDto{}, "", errors.New("There is a active or suspended user with this same email")
 	}
 
@@ -56,8 +56,21 @@ func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
 	}
 	return dtos.ToUserDto(user), nil
 }
-func (s *UserService) GetUsersWithPagination(page int, limit int) ([]models.User, int64, error) {
-	return s.userRepo.GetUsersWithPagination(page, limit)
+func (s *UserService) GetUserList(page int, limit int) (*dtos.UserListDto, int64, error) {
+	users, total, err := s.userRepo.GetUserList(page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	userDtos := dtos.ConvertUsersToDtos(users)
+
+	userListDto := &dtos.UserListDto{
+		Total: strconv.FormatInt(total, 10),
+		Page:  page,
+		Limit: limit,
+		Users: userDtos,
+	}
+
+	return userListDto, total, nil
 }
 func (s *UserService) DeactivateUserById(id uint) (dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)

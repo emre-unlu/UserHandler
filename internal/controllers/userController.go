@@ -7,7 +7,6 @@ import (
 	"github.com/emre-unlu/GinTest/internal/services"
 	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/GinTest/pkg/customValidator"
-	"github.com/emre-unlu/GinTest/pkg/postgresql"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
@@ -24,50 +23,39 @@ func InitializeUserController(service *services.UserService, customValidator *cu
 	customValidate = customValidator
 }
 
-func GetUsersWithPagination(c *gin.Context) {
-	pageParam := c.DefaultQuery("page", "1")
-	limitParam := c.DefaultQuery("limit", "10")
+func GetUserList(c *gin.Context) {
+	userListDto := dtos.NewUserListDto()
 
-	page, err := strconv.Atoi(pageParam)
-	if err != nil || page < 1 {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid page parameter")
-		return
+	if p := c.Query("page"); p != "" {
+		if parsedPage, err := strconv.Atoi(p); err == nil {
+			userListDto.Page = parsedPage
+		}
 	}
 
-	limit, err := strconv.Atoi(limitParam)
-	if err != nil || limit < 1 {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid limit parameter")
-		return
+	if l := c.Query("limit"); l != "" {
+		if parsedLimit, err := strconv.Atoi(l); err == nil {
+			userListDto.Limit = parsedLimit
+		}
 	}
 
-	users, total, err := userService.GetUsersWithPagination(page, limit)
+	users, total, err := userService.GetUserList(userListDto.Page, userListDto.Limit)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"total": total,
-		"page":  page,
-		"limit": limit,
-		"users": users,
-	})
+	c.JSON(http.StatusOK, gin.H{"total users": total, "users": users})
 }
+
 func GetUserById(c *gin.Context) {
 
-	id, exists := c.Get("id")
-	if !exists {
-		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
-		return
+	id := c.Param("id")
+	userid, err := strconv.Atoi(id)
+	if err != nil || userid < 1 {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid user id parameter")
 	}
 
-	userId, ok := id.(uint)
-	if !ok {
-		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
-		return
-	}
-
-	user, err := userService.GetUserById(userId)
+	user, err := userService.GetUserById(uint(userid))
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -100,21 +88,15 @@ func CreateUser(c *gin.Context) {
 
 func DeactivateUserById(c *gin.Context) {
 
-	id, exists := c.Get("id")
-	if !exists {
-		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
-		return
+	id := c.Param("id")
+	userid, err := strconv.Atoi(id)
+	if err != nil || userid < 1 {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid user id parameter")
 	}
 
-	userId, ok := id.(uint)
-	if !ok {
-		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
-		return
-	}
-
-	userDto, err := userService.DeactivateUserById(userId)
+	userDto, err := userService.DeactivateUserById(uint(userid))
 	if err != nil {
-		if errors.Is(err, postgresql.ErrUserAlreadyDisactive) {
+		if errors.Is(err, internal.ErrUserAlreadyDisactive) {
 			utils.RespondWithError(c, http.StatusConflict, err.Error())
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
@@ -125,23 +107,19 @@ func DeactivateUserById(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully deactivated"})
 }
+
 func ActivateUserById(c *gin.Context) {
-	id, exists := c.Get("id")
-	if !exists {
-		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
-		return
-	}
-	userId, ok := id.(uint)
-	if !ok {
-		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
-		return
+	id := c.Param("id")
+	userid, err := strconv.Atoi(id)
+	if err != nil || userid < 1 {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid user id parameter")
 	}
 
-	userDto, err := userService.ActivateUserById(userId)
+	userDto, err := userService.ActivateUserById(uint(userid))
 	if err != nil {
-		if errors.Is(err, postgresql.ErrUserAlreadyActive) {
+		if errors.Is(err, internal.ErrUserAlreadyActive) {
 			utils.RespondWithError(c, http.StatusBadRequest, err.Error())
-		} else if errors.Is(err, postgresql.ErrUserDeleted) {
+		} else if errors.Is(err, internal.ErrUserDeleted) {
 			utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.RespondWithError(c, http.StatusNotFound, "User not found")
@@ -152,23 +130,20 @@ func ActivateUserById(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"user": userDto, "message": "User successfully reactivated"})
 }
+
 func SuspendUserById(c *gin.Context) {
-	id, exists := c.Get("id")
-	if !exists {
-		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
-		return
-	}
-	userId, ok := id.(uint)
-	if !ok {
-		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
-		return
+	id := c.Param("id")
+	userid, err := strconv.Atoi(id)
+	if err != nil || userid < 1 {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid user id parameter")
 	}
 
-	userDto, err := userService.SuspendUserById(userId)
+	userDto, err := userService.SuspendUserById(uint(userid))
 	if err != nil {
-		if errors.Is(err, postgresql.ErrUserAlreadySuspended) {
+		//To do fix these
+		if errors.Is(err, internal.ErrUserAlreadySuspended) {
 			utils.RespondWithError(c, http.StatusConflict, err.Error())
-		} else if errors.Is(err, postgresql.ErrUserDeleted) {
+		} else if errors.Is(err, internal.ErrUserDeleted) {
 			utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.RespondWithError(c, http.StatusNotFound, err.Error())
@@ -209,19 +184,15 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, updatedUserDto)
-
 }
+
 func UpdatePassword(c *gin.Context) {
-	id, exists := c.Get("id")
-	if !exists {
-		utils.RespondWithError(c, http.StatusUnauthorized, "User Id not found")
-		return
+	id := c.Param("id")
+	userid, err := strconv.Atoi(id)
+	if err != nil || userid < 1 {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid user id parameter")
 	}
-	userId, ok := id.(uint)
-	if !ok {
-		utils.RespondWithError(c, http.StatusUnauthorized, "Failed to parse user id")
-		return
-	}
+
 	var passwordUpdateDto dtos.PasswordUpdateDto
 	if err := c.ShouldBindJSON(&passwordUpdateDto); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, err.Error())
@@ -235,7 +206,7 @@ func UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	err := userService.UpdatePassword(userId, passwordUpdateDto)
+	err = userService.UpdatePassword(uint(userid), passwordUpdateDto)
 	if err != nil {
 		if errors.Is(err, internal.ErrIncorrectPassword) {
 			utils.RespondWithError(c, http.StatusBadRequest, err.Error())

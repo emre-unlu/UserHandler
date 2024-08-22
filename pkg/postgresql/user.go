@@ -1,15 +1,9 @@
 package postgresql
 
 import (
-	"errors"
 	"github.com/emre-unlu/GinTest/internal/models"
 	"gorm.io/gorm"
 )
-
-var ErrUserAlreadyDisactive = errors.New("user is already disactive")
-var ErrUserAlreadyActive = errors.New("user is already active")
-var ErrUserAlreadySuspended = errors.New("user is already suspended")
-var ErrUserDeleted = errors.New("Deleted user cannot be reactivated")
 
 type PGUserRepository struct {
 	DB *gorm.DB
@@ -19,7 +13,7 @@ func NewPGUserRepository(db *gorm.DB) *PGUserRepository {
 	return &PGUserRepository{DB: db}
 }
 
-func (r *PGUserRepository) GetUsersWithPagination(page int, limit int) ([]models.User, int64, error) {
+func (r *PGUserRepository) GetUserList(page int, limit int) ([]models.User, int64, error) {
 	var users []models.User
 	var total int64
 	offset := (page - 1) * limit
@@ -74,13 +68,16 @@ func (r *PGUserRepository) UpdateUser(user models.User) (models.User, error) {
 func (r *PGUserRepository) UpdatePassword(id uint, newPassword string) error {
 	return r.DB.Model(&models.User{}).Where("id = ?", id).Update("password", newPassword).Error
 }
-func (r *PGUserRepository) CheckUserByEmail(email string) (models.User, error) {
-	var user models.User
+func (r *PGUserRepository) CheckUserByEmail(email string) (*models.User, error) {
+	var user *models.User
 	err := r.DB.Where("email = ? AND status IN (?, ?)", email, models.StatusActive, models.StatusSuspended).
 		First(&user).Error
 
 	if err != nil {
-		return models.User{}, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
 
 	}
 	return user, nil

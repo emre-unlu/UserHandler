@@ -11,6 +11,7 @@ type UserDto struct {
 	Birthdate string        `json:"birthdate" validate:"required,datetime=2006-01-02"`
 	Status    models.Status `json:"status" `
 }
+
 type PasswordUpdateDto struct {
 	OldPassword string `json:"old_password" validate:"required"`
 	NewPassword string `json:"new_password" validate:"required,password-strength"`
@@ -21,11 +22,24 @@ type LoginDto struct {
 	Password string `json:"password" validate:"required,password"`
 	Id       uint   `json:"id" validate:"required,number"`
 }
+
 type RefreshTokenDTO struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
-type UserTokenDTO struct {
+
+type UserListDto struct {
+	Total string    `json:"total"`
+	Page  int       `json:"page"`
+	Limit int       `json:"limit"`
+	Users []UserDto `json:"users"`
 }
 type ErrorMessageDto struct {
 	Message string `json:"message"`
+}
+
+func NewUserListDto() *UserListDto {
+	return &UserListDto{
+		Page:  1,
+		Limit: 10,
+	}
 }

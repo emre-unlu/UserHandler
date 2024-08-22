@@ -34,3 +34,17 @@ func (u *UserDto) ToUser() (models.User, error) {
 		Status:    u.Status,
 	}, err
 }
+func ConvertUsersToDtos(users []models.User) []UserDto {
+	dtos := make([]UserDto, len(users))
+	for i, user := range users {
+		dtos[i] = ToUserDto(user)
+	}
+	return dtos
+}
+func ConvertUserToLoginDto(user *models.User) LoginDto {
+	return LoginDto{
+		Email:    user.Email,
+		Password: user.Password,
+		Id:       user.ID,
+	}
+}

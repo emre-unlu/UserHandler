@@ -1,14 +1,10 @@
 package services
 
 import (
-	"errors"
+	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/models"
 	"github.com/emre-unlu/GinTest/internal/utils"
-)
-
-var (
-	ErrInvalidCredentials = errors.New("invalid email or password")
 )
 
 type AuthService struct {
@@ -21,19 +17,15 @@ func NewAuthService(userRepo models.UserRepository) *AuthService {
 
 func (s *AuthService) Login(email string, password string) (loginDto dtos.LoginDto, err error) {
 	user, err := s.userRepo.CheckUserByEmail(email)
-	if err != nil {
-		return dtos.LoginDto{}, ErrInvalidCredentials
+	if user == nil {
+		return dtos.LoginDto{}, internal.ErrUserNotFound
 	}
 
 	if !utils.VerifyPassword(password, user.Password) {
-		return dtos.LoginDto{}, ErrInvalidCredentials
+		return dtos.LoginDto{}, internal.ErrIncorrectPassword
 	}
 
-	loginDto = dtos.LoginDto{
-		Email:    user.Email,
-		Password: user.Password,
-		Id:       user.ID,
-	}
+	loginDto = dtos.ConvertUserToLoginDto(user)
 
 	return loginDto, nil
 }
