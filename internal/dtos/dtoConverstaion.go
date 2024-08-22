@@ -1,13 +1,14 @@
 package dtos
 
 import (
+	"fmt"
 	"github.com/emre-unlu/GinTest/internal/models"
 	"time"
 )
 
 const BirthdateFormat = "2006-01-02"
 
-func ToUserDto(user models.User) UserDto {
+func ToUserDto(user *models.User) UserDto {
 	return UserDto{
 		ID:        user.ID,
 		Name:      user.Name,
@@ -19,12 +20,12 @@ func ToUserDto(user models.User) UserDto {
 	}
 }
 
-func (u *UserDto) ToUser() (models.User, error) {
+func (u *UserDto) ToUser() (*models.User, error) {
 	birthdate, err := time.Parse(BirthdateFormat, u.Birthdate)
 	if err != nil {
-		return models.User{}, err
+		return nil, fmt.Errorf("failed to convert User to user dto: %w", err)
 	}
-	return models.User{
+	return &models.User{
 		ID:        u.ID,
 		Name:      u.Name,
 		Surname:   u.Surname,
@@ -37,7 +38,7 @@ func (u *UserDto) ToUser() (models.User, error) {
 func ConvertUsersToDtos(users []models.User) []UserDto {
 	dtos := make([]UserDto, len(users))
 	for i, user := range users {
-		dtos[i] = ToUserDto(user)
+		dtos[i] = ToUserDto(&user)
 	}
 	return dtos
 }
