@@ -1,7 +1,7 @@
 package models
 
 type UserRepository interface {
-	GetUserList(page int, limit int) ([]User, int64, error)
+	GetUserList(page uint, limit uint) ([]User, int64, error)
 	GetUserById(id uint) (*User, error)
 	CreateUser(user User) (*User, error)
 	SuspendUserById(user *User) error

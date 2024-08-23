@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+
 	postgresql.ConnectDatabase()
 	seeder.SeedUser(postgresql.DB) //seed user if no user exists
 	userRepo := postgresql.NewPGUserRepository(postgresql.DB)

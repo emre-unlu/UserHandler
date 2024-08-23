@@ -42,10 +42,3 @@ func ConvertUsersToDtos(users []models.User) []UserDto {
 	}
 	return dtos
 }
-func ConvertUserToLoginDto(user *models.User) LoginDto {
-	return LoginDto{
-		Email:    user.Email,
-		Password: user.Password,
-		Id:       user.ID,
-	}
-}

@@ -7,6 +7,7 @@ import (
 	"github.com/emre-unlu/GinTest/internal/utils"
 	"github.com/emre-unlu/GinTest/pkg/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	myjwt "github.com/golang-jwt/jwt/v4"
 	"net/http"
 )
@@ -24,21 +25,27 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	if err := validate.Struct(loginDTO); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		c.JSON(http.StatusBadRequest, gin.H{"error": validationErrors.Translate(nil)})
+		return
+	}
+
 	dtoToGenerate, err := authService.Login(loginDTO.Email, loginDTO.Password)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	accessToken, refreshToken, err := jwt.GenerateJWT(dtoToGenerate.Email, dtoToGenerate.Id)
+	accessToken, refreshToken, err := jwt.GenerateJWT(loginDTO.Email, dtoToGenerate.Id)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
+	dtoToGenerate.AccessToken = accessToken
+	dtoToGenerate.RefreshToken = refreshToken
+
+	c.JSON(http.StatusOK, dtoToGenerate)
 
 }
 

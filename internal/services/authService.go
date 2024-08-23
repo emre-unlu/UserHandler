@@ -15,17 +15,19 @@ func NewAuthService(userRepo models.UserRepository) *AuthService {
 	return &AuthService{userRepo: userRepo}
 }
 
-func (s *AuthService) Login(email string, password string) (loginDto dtos.LoginDto, err error) {
+func (s *AuthService) Login(email string, password string) (loginResponseDto *dtos.LoginResponseDto, err error) {
 	user, err := s.userRepo.CheckUserByEmail(email)
 	if user == nil {
-		return dtos.LoginDto{}, internal.ErrUserNotFound
+		return nil, internal.ErrUserNotFound
 	}
 
 	if !utils.VerifyPassword(password, user.Password) {
-		return dtos.LoginDto{}, internal.ErrIncorrectPassword
+		return nil, internal.ErrIncorrectPassword
 	}
 
-	loginDto = dtos.ConvertUserToLoginDto(user)
+	response := dtos.LoginResponseDto{
+		Id: user.ID,
+	}
 
-	return loginDto, nil
+	return &response, nil
 }

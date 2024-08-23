@@ -2,12 +2,13 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"github.com/emre-unlu/GinTest/internal"
 	"github.com/emre-unlu/GinTest/internal/dtos"
 	"github.com/emre-unlu/GinTest/internal/models"
 	"github.com/emre-unlu/GinTest/internal/utils"
+	"github.com/emre-unlu/GinTest/pkg/InformationSystem"
 	"github.com/emre-unlu/go-passwordgen/passwordgen"
-	"strconv"
 	"time"
 )
 
@@ -19,32 +20,44 @@ func NewUserService(userRepo models.UserRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
-func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, string, error) {
+func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, error) {
 
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
 	if err != nil {
-		return dtos.UserDto{}, "", err
+		return dtos.UserDto{}, err
 	}
 
 	if isUserExist != nil {
-		return dtos.UserDto{}, "", internal.ErrThereIsActiveOrSuspendedUser
+		return dtos.UserDto{}, internal.ErrThereIsActiveOrSuspendedUser
 	}
 
 	generatedPassword, err := passwordgen.GeneratePassword(10)
 	if err != nil {
-		return dtos.UserDto{}, "", internal.ErrGeneratingPassword
+		return dtos.UserDto{}, internal.ErrGeneratingPassword
 	}
 
 	hashedPassword, err := utils.HashPassword(generatedPassword)
 	if err != nil {
-		return dtos.UserDto{}, "", internal.ErrHashingError
+		return dtos.UserDto{}, internal.ErrHashingError
 	}
 
 	user, err := userDto.ToUser()
 	user.Password = hashedPassword
 
 	generatedUser, err := s.userRepo.CreateUser(*user)
-	return dtos.ToUserDto(generatedUser), generatedPassword, err
+	if err != nil {
+		return dtos.UserDto{}, err
+	}
+
+	// Send the email with the password
+	subject := "Your Account Has Been Created"
+	body := fmt.Sprintf("Dear %s,\n\nYour account has been successfully created.  \nYour password is: ( %s ) \nBest Wishes by Emre", userDto.Name, generatedPassword)
+	err = InformationSystem.SendEmail(userDto.Email, subject, body)
+	if err != nil {
+		return dtos.ToUserDto(generatedUser), fmt.Errorf("user created but failed to send email: \n With id : %d \n With password : %s", userDto.ID, generatedPassword)
+	}
+
+	return dtos.ToUserDto(generatedUser), err
 }
 
 func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
@@ -54,21 +67,19 @@ func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
 	}
 	return dtos.ToUserDto(user), nil
 }
-func (s *UserService) GetUserList(page int, limit int) (*dtos.UserListDto, int64, error) {
-	users, total, err := s.userRepo.GetUserList(page, limit)
+func (s *UserService) GetUserList(userListRequestDto dtos.UserListRequestDto) (*dtos.UserListDto, error) {
+	users, total, err := s.userRepo.GetUserList(userListRequestDto.Page, userListRequestDto.Limit)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	userDtos := dtos.ConvertUsersToDtos(users)
 
 	userListDto := &dtos.UserListDto{
-		Total: strconv.FormatInt(total, 10),
-		Page:  page,
-		Limit: limit,
+		Total: uint(total),
 		Users: userDtos,
 	}
 
-	return userListDto, total, nil
+	return userListDto, nil
 }
 
 func (s *UserService) SuspendUserById(id uint) error {

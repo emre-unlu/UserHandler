@@ -14,18 +14,19 @@ func NewPGUserRepository(db *gorm.DB) *PGUserRepository {
 	return &PGUserRepository{DB: db}
 }
 
-func (r *PGUserRepository) GetUserList(page int, limit int) ([]models.User, int64, error) {
+func (r *PGUserRepository) GetUserList(page uint, limit uint) ([]models.User, int64, error) {
 	var users []models.User
 	var total int64
-	offset := (page - 1) * limit
+	offset := CalculateOffset(page, limit)
 
 	// Count the total number of users
 	if err := r.DB.Model(&models.User{}).Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count total number of users: %w", err)
+		fmt.Sprintf("User count Error with error message : %w", err)
+		return nil, 0, fmt.Errorf("internal error")
 	}
 
 	// Retrieve the list of users with pagination
-	if err := r.DB.Limit(limit).Offset(offset).Find(&users).Error; err != nil {
+	if err := r.DB.Limit(int(limit)).Offset(offset).Find(&users).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve user list for page %d with limit %d: %w", page, limit, err)
 	}
 

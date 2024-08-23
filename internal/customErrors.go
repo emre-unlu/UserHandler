@@ -20,7 +20,7 @@ var (
 	ErrUserAlreadyActive            = errors.New("user is already active")
 	ErrUserAlreadySuspended         = errors.New("user is already suspended")
 	ErrUserDeleted                  = errors.New("Deleted user cannot be reactivated")
-	ErrThereIsActiveOrSuspendedUser = errors.New("There is a active or suspended user with this same email")
+	ErrThereIsActiveOrSuspendedUser = errors.New("This email is already exists")
 )
 
 var (

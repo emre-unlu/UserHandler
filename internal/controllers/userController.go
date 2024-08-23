@@ -22,27 +22,25 @@ func InitializeUserController(service *services.UserService, customValidator *cu
 }
 
 func GetUserList(c *gin.Context) {
-	userListDto := dtos.NewUserListDto()
-
-	if p := c.Query("page"); p != "" {
-		if parsedPage, err := strconv.Atoi(p); err == nil {
-			userListDto.Page = parsedPage
-		}
+	userListRequestDto := dtos.UserListRequestDto{}
+	if err := c.ShouldBindQuery(&userListRequestDto); err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
-	if l := c.Query("limit"); l != "" {
-		if parsedLimit, err := strconv.Atoi(l); err == nil {
-			userListDto.Limit = parsedLimit
-		}
+	if err := validate.Struct(userListRequestDto); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		c.JSON(http.StatusBadRequest, gin.H{"error": validationErrors.Translate(nil)})
+		return
 	}
 
-	users, total, err := userService.GetUserList(userListDto.Page, userListDto.Limit)
+	users, err := userService.GetUserList(userListRequestDto)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"total users": total, "users": users})
+	c.JSON(http.StatusOK, users)
 }
 
 func GetUserById(c *gin.Context) {
@@ -77,12 +75,12 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	createdUser, generatedPassword, err := userService.CreateUser(userDto)
+	createdUser, err := userService.CreateUser(userDto)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"id": createdUser.ID, "password": generatedPassword})
+	c.JSON(http.StatusOK, gin.H{"id": createdUser.ID})
 }
 
 func SuspendUserById(c *gin.Context) {

@@ -19,27 +19,29 @@ type PasswordUpdateDto struct {
 
 type LoginDto struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,password"`
-	Id       uint   `json:"id" validate:"required,number"`
+	Password string `json:"password" validate:"required"`
+}
+
+type LoginResponseDto struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Id           uint   `json:"id"`
 }
 
 type RefreshTokenDTO struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
-type UserListDto struct {
-	Total string    `json:"total"`
-	Page  int       `json:"page"`
-	Limit int       `json:"limit"`
-	Users []UserDto `json:"users"`
-}
-type ErrorMessageDto struct {
-	Message string `json:"message"`
+type UserListRequestDto struct {
+	Page  uint `form:"page" validate:"required,gte=0"`
+	Limit uint `form:"limit" validate:"required,gt=0"`
 }
 
-func NewUserListDto() *UserListDto {
-	return &UserListDto{
-		Page:  1,
-		Limit: 10,
-	}
+type UserListDto struct {
+	Total uint      `json:"total"`
+	Users []UserDto `json:"users"`
+}
+
+type ErrorMessageDto struct {
+	Message string `json:"message"`
 }
