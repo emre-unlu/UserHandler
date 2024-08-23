@@ -51,7 +51,7 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, error) {
 
 	// Send the email with the password
 	subject := "Your Account Has Been Created"
-	body := fmt.Sprintf("Dear %s,\n\nYour account has been successfully created.  \nYour password is: ( %s ) \nBest Wishes by Emre", userDto.Name, generatedPassword)
+	body := fmt.Sprintf("Dear %s,\n\nYour account has been successfully created.  \nYour password is:%s\nBest Wishes by Emre", userDto.Name, generatedPassword)
 	err = InformationSystem.SendEmail(userDto.Email, subject, body)
 	if err != nil {
 		return dtos.ToUserDto(generatedUser), fmt.Errorf("user created but failed to send email: \n With id : %d \n With password : %s", userDto.ID, generatedPassword)
@@ -205,6 +205,44 @@ func (s *UserService) UpdatePassword(id uint, PasswordUpdateDto dtos.PasswordUpd
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *UserService) ForgotPassword(email string) error {
+	user, err := s.userRepo.CheckUserByEmail(email)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("no user found with this email")
+	}
+
+	// Generate a new password
+	newPassword, err := passwordgen.GeneratePassword(10)
+	if err != nil {
+		return err
+	}
+
+	// Hash the new password
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update the user's password
+	user.Password = hashedPassword
+	if err := s.userRepo.UpdateUser(user); err != nil {
+		return err
+	}
+
+	// Send the email with the new password
+	subject := "Your Password Has Been Reset"
+	body := fmt.Sprintf("Dear %s,\n\nYour password has been successfully reset.\nYour new password is: %s\n\nEmre", user.Name, newPassword)
+	if err := InformationSystem.SendEmail(user.Email, subject, body); err != nil {
+		fmt.Sprintf("Failed to send an email : %w", err)
+		return fmt.Errorf("password reset but failed to send email your new password is: %s")
 	}
 
 	return nil

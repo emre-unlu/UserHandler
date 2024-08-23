@@ -27,7 +27,8 @@ func (r *PGUserRepository) GetUserList(page uint, limit uint) ([]models.User, in
 
 	// Retrieve the list of users with pagination
 	if err := r.DB.Limit(int(limit)).Offset(offset).Find(&users).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to retrieve user list for page %d with limit %d: %w", page, limit, err)
+		fmt.Sprintf("User list cannot be retrived with code : %w", err)
+		return nil, 0, fmt.Errorf("failed to retrieve user list for page %d with limit %d", page, limit)
 	}
 
 	return users, total, nil
@@ -38,7 +39,9 @@ func (r *PGUserRepository) GetUserById(id uint) (*models.User, error) {
 	result := r.DB.First(&user, id)
 
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed get the user: %w", result.Error)
+
+		fmt.Sprintf("Failed to retrive the user with code : %w", result.Error)
+		return nil, fmt.Errorf("failed get the user")
 	}
 
 	return user, result.Error
@@ -47,7 +50,8 @@ func (r *PGUserRepository) CreateUser(user models.User) (*models.User, error) {
 	result := r.DB.Create(&user)
 
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to count total number of users: %w", result.Error)
+		fmt.Sprintf("Failed to create the user with id %d with error message: %w", user.ID, result.Error)
+		return nil, fmt.Errorf("internal server error")
 	}
 
 	return &user, result.Error
@@ -56,7 +60,8 @@ func (r *PGUserRepository) CreateUser(user models.User) (*models.User, error) {
 func (r *PGUserRepository) SuspendUserById(user *models.User) error {
 	result := r.DB.Save(user)
 	if result.Error != nil {
-		return fmt.Errorf("failed to suspend the user with id %d: %w", user.ID, result.Error)
+		fmt.Sprintf("Failed to suspend the user : %w", result.Error)
+		return fmt.Errorf("failed to suspend the user with id %d", user.ID)
 	}
 	return nil
 }
@@ -64,7 +69,8 @@ func (r *PGUserRepository) SuspendUserById(user *models.User) error {
 func (r *PGUserRepository) DeactivateUserById(user *models.User) error {
 	result := r.DB.Save(user)
 	if result.Error != nil {
-		return fmt.Errorf("failed to deactivate the user with id %d: %w", user.ID, result.Error)
+		fmt.Sprintf("Failed to deactivate the user : %w", result.Error)
+		return fmt.Errorf("failed to deactivate the user with id %d", user.ID)
 	}
 	return nil
 }
@@ -72,7 +78,8 @@ func (r *PGUserRepository) DeactivateUserById(user *models.User) error {
 func (r *PGUserRepository) ActivateUserById(user *models.User) error {
 	result := r.DB.Save(user)
 	if result.Error != nil {
-		return fmt.Errorf("failed to save the user with id %d: %w", user.ID, result.Error)
+		fmt.Sprintf("Failed to activate the user : %w", result.Error)
+		return fmt.Errorf("failed to activate the user with id %d", user.ID)
 	}
 	return nil
 }
@@ -80,6 +87,7 @@ func (r *PGUserRepository) UpdateUser(user *models.User) error {
 	result := r.DB.Save(user)
 
 	if result.Error != nil {
+		fmt.Sprintf("Failed to update the user : %w", result.Error)
 		return fmt.Errorf("failed to update the user with id %d: %w", user.ID, result.Error)
 	}
 	return nil
@@ -87,7 +95,8 @@ func (r *PGUserRepository) UpdateUser(user *models.User) error {
 
 func (r *PGUserRepository) UpdatePassword(id uint, newPassword string) error {
 	if err := r.DB.Model(&models.User{}).Where("id = ?", id).Update("password", newPassword).Error; err != nil {
-		return fmt.Errorf("failed to update password for user with ID %d: %w", id, err)
+		fmt.Sprintf("Failed to update the password of  the user : %w", err)
+		return fmt.Errorf("failed to update password for user with ID %d", id)
 	}
 	return nil
 }
@@ -100,7 +109,8 @@ func (r *PGUserRepository) CheckUserByEmail(email string) (*models.User, error) 
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to check user by email %s: %w", email, err)
+		fmt.Sprintf("Failed to checking the user : %w", err)
+		return nil, fmt.Errorf("failed to check user by email %s", email)
 	}
 	return &user, nil
 }

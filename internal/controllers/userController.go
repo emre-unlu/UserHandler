@@ -193,3 +193,27 @@ func UpdatePassword(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Password of user with Id : %d successfully updated ", userid)})
 }
+
+func ForgotPassword(c *gin.Context) {
+	forgotPasswordDto := dtos.ForgotPasswordDto{}
+	if err := c.ShouldBindJSON(&forgotPasswordDto); err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if err := customValidate.Validator.Struct(forgotPasswordDto); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		translatedErrors := validationErrors.Translate(customValidate.Translator)
+		c.JSON(http.StatusBadRequest, gin.H{"errors": translatedErrors})
+		return
+	}
+
+	err := userService.ForgotPassword(forgotPasswordDto.Email)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Email with new password is successfully sent to the email : %s ", forgotPasswordDto.Email)})
+
+}
