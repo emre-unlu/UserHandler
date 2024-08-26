@@ -1,7 +1,11 @@
 package models
 
+import (
+	"github.com/emre-unlu/GinTest/pkg/postgresql/dto"
+)
+
 type UserRepository interface {
-	GetUserList(page uint, limit uint) ([]User, int64, error)
+	GetUserList(page uint, limit uint, userFilter dto.UserFilter) ([]User, int64, error)
 	GetUserById(id uint) (*User, error)
 	CreateUser(user User) (*User, error)
 	SuspendUserById(user *User) error

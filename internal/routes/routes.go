@@ -14,7 +14,7 @@ func RegisterRoutes(router *gin.Engine) {
 	authorized := router.Group("/users")
 	authorized.Use(middleware.JWTAuthMiddleware())
 	{
-		authorized.POST("/users", controllers.CreateUser)
+		authorized.POST("/", controllers.CreateUser)
 		authorized.GET("/", controllers.GetUserList)
 		authorized.GET("/:id", controllers.GetUserById)
 		authorized.DELETE("/:id", controllers.DeactivateUserById)

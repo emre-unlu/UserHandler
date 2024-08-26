@@ -20,33 +20,36 @@ func NewUserService(userRepo models.UserRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
-func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, error) {
+func (s *UserService) CreateUser(userDto dtos.UserDto) (*dtos.UserDto, error) {
 
 	isUserExist, err := s.userRepo.CheckUserByEmail(userDto.Email)
 	if err != nil {
-		return dtos.UserDto{}, err
+		return nil, err
 	}
 
 	if isUserExist != nil {
-		return dtos.UserDto{}, internal.ErrThereIsActiveOrSuspendedUser
+		return nil, internal.ErrThereIsActiveOrSuspendedUser
 	}
 
 	generatedPassword, err := passwordgen.GeneratePassword(10)
 	if err != nil {
-		return dtos.UserDto{}, internal.ErrGeneratingPassword
+		return nil, internal.ErrGeneratingPassword
 	}
 
 	hashedPassword, err := utils.HashPassword(generatedPassword)
 	if err != nil {
-		return dtos.UserDto{}, internal.ErrHashingError
+		return nil, internal.ErrHashingError
 	}
 
 	user, err := userDto.ToUser()
+	if err != nil {
+		return nil, err
+	}
 	user.Password = hashedPassword
 
 	generatedUser, err := s.userRepo.CreateUser(*user)
 	if err != nil {
-		return dtos.UserDto{}, err
+		return nil, err
 	}
 
 	// Send the email with the password
@@ -60,15 +63,19 @@ func (s *UserService) CreateUser(userDto dtos.UserDto) (dtos.UserDto, error) {
 	return dtos.ToUserDto(generatedUser), err
 }
 
-func (s *UserService) GetUserById(id uint) (dtos.UserDto, error) {
+func (s *UserService) GetUserById(id uint) (*dtos.UserDto, error) {
 	user, err := s.userRepo.GetUserById(id)
 	if err != nil {
-		return dtos.UserDto{}, err
+		return nil, err
 	}
 	return dtos.ToUserDto(user), nil
 }
-func (s *UserService) GetUserList(userListRequestDto dtos.UserListRequestDto) (*dtos.UserListDto, error) {
-	users, total, err := s.userRepo.GetUserList(userListRequestDto.Page, userListRequestDto.Limit)
+
+func (s *UserService) GetUserList(userListRequestDto dtos.UserListRequestDto, userFilterDto dtos.UserFilterDto) (*dtos.UserListDto, error) {
+
+	userFilter := dtos.MapToUserFilter(userFilterDto)
+
+	users, total, err := s.userRepo.GetUserList(userListRequestDto.Page, userListRequestDto.Limit, userFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +83,7 @@ func (s *UserService) GetUserList(userListRequestDto dtos.UserListRequestDto) (*
 
 	userListDto := &dtos.UserListDto{
 		Total: uint(total),
-		Users: userDtos,
+		Users: *userDtos,
 	}
 
 	return userListDto, nil

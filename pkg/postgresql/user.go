@@ -3,6 +3,7 @@ package postgresql
 import (
 	"fmt"
 	"github.com/emre-unlu/GinTest/internal/models"
+	"github.com/emre-unlu/GinTest/pkg/postgresql/dto"
 	"gorm.io/gorm"
 )
 
@@ -14,21 +15,33 @@ func NewPGUserRepository(db *gorm.DB) *PGUserRepository {
 	return &PGUserRepository{DB: db}
 }
 
-func (r *PGUserRepository) GetUserList(page uint, limit uint) ([]models.User, int64, error) {
+func (r *PGUserRepository) GetUserList(page uint, limit uint, userFilterDto dto.UserFilter) ([]models.User, int64, error) {
 	var users []models.User
 	var total int64
 	offset := CalculateOffset(page, limit)
 
-	// Count the total number of users
-	if err := r.DB.Model(&models.User{}).Count(&total).Error; err != nil {
-		fmt.Sprintf("User count Error with error message : %w", err)
-		return nil, 0, fmt.Errorf("internal error")
+	query := r.DB.Model(&models.User{})
+
+	filterConditions := dto.ConvertToFilterMap(userFilterDto)
+	// Apply filters to the query
+	for column, condition := range filterConditions {
+		if condition.Value != nil {
+			if condition.UseLike {
+				query = query.Where(column+" LIKE ?", "%"+*condition.Value+"%")
+			} else {
+				query = query.Where(column+" = ?", *condition.Value)
+			}
+		}
+	}
+
+	// Count the total number of users with filters applied
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
 
 	// Retrieve the list of users with pagination
-	if err := r.DB.Limit(int(limit)).Offset(offset).Find(&users).Error; err != nil {
-		fmt.Sprintf("User list cannot be retrived with code : %w", err)
-		return nil, 0, fmt.Errorf("failed to retrieve user list for page %d with limit %d", page, limit)
+	if err := query.Limit(int(limit)).Offset(offset).Find(&users).Error; err != nil {
+		return nil, 0, err
 	}
 
 	return users, total, nil

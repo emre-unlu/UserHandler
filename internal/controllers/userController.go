@@ -28,13 +28,19 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
+	userFilterDto := dtos.UserFilterDto{}
+	if err := c.ShouldBind(&userFilterDto); err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
 	if err := validate.Struct(userListRequestDto); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErrors.Translate(nil)})
 		return
 	}
 
-	users, err := userService.GetUserList(userListRequestDto)
+	users, err := userService.GetUserList(userListRequestDto, userFilterDto)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, err.Error())
 		return

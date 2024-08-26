@@ -48,3 +48,9 @@ type ErrorMessageDto struct {
 type ForgotPasswordDto struct {
 	Email string `json:"email" validate:"required,email"`
 }
+
+type UserFilterDto struct {
+	Name   string `form:"name"`
+	Email  string `form:"email"`
+	Status string `form:"status"`
+}
