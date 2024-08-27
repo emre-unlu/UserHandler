@@ -10,11 +10,12 @@ func RegisterRoutes(router *gin.Engine) {
 	router.POST("/login", controllers.Login)
 	router.POST("/token/refresh", controllers.RefreshToken)
 	router.POST("/password/reset", controllers.ForgotPassword)
+	router.POST("/", controllers.CreateUser)
 
 	authorized := router.Group("/users")
 	authorized.Use(middleware.JWTAuthMiddleware())
 	{
-		authorized.POST("/", controllers.CreateUser)
+
 		authorized.GET("/", controllers.GetUserList)
 		authorized.GET("/:id", controllers.GetUserById)
 		authorized.DELETE("/:id", controllers.DeactivateUserById)
@@ -28,6 +29,6 @@ func RegisterRoutes(router *gin.Engine) {
 	profile.Use(middleware.JWTAuthMiddleware())
 	{
 		profile.GET("/", controllers.GetUserList)
-
 	}
+
 }

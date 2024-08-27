@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: mydb
+    environment:
+      POSTGRES_USER: newuser
+      POSTGRES_PASSWORD: newpassword
+      POSTGRES_DB: newdatabase
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U newuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: myapp
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: newuser
+      DB_PASSWORD: newpassword
+      DB_NAME: newdatabase
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
+

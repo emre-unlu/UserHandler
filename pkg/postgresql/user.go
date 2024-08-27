@@ -27,7 +27,7 @@ func (r *PGUserRepository) GetUserList(page uint, limit uint, userFilterDto dto.
 	for column, condition := range filterConditions {
 		if condition.Value != nil {
 			if condition.UseLike {
-				query = query.Where(column+" LIKE ?", "%"+*condition.Value+"%")
+				query = query.Where(column+" ILIKE ?", "%"+*condition.Value+"%")
 			} else {
 				query = query.Where(column+" = ?", *condition.Value)
 			}
